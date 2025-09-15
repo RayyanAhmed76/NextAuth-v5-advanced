@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { loginScehma } from "@/schema";
+import { RegisterScehma } from "@/schema";
 import {
   Form,
   FormControl,
@@ -20,18 +20,19 @@ import { FormSuccess } from "../form-success";
 import { login } from "@/actions/login";
 import { useState, useTransition } from "react";
 
-export const Loginform = () => {
+export const RegisterForm = () => {
   const [error, seterror] = useState<string | undefined>("");
   const [success, setsuccess] = useState<string | undefined>("");
   const [ispending, startTransition] = useTransition();
-  const form = useForm<z.infer<typeof loginScehma>>({
-    resolver: zodResolver(loginScehma),
+  const form = useForm<z.infer<typeof RegisterScehma>>({
+    resolver: zodResolver(RegisterScehma),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
   });
-  const onsubmit = (values: z.infer<typeof loginScehma>) => {
+  const onsubmit = (values: z.infer<typeof RegisterScehma>) => {
     seterror("");
     setsuccess("");
     startTransition(() => {
@@ -43,14 +44,31 @@ export const Loginform = () => {
   };
   return (
     <CardWrapper
-      headerLabel="welcome back"
-      backButtonLabel="Don't have an account?"
-      backButtonHref="/auth/register"
+      headerLabel="Create an Account"
+      backButtonLabel="Already have an account?"
+      backButtonHref="/auth/login"
       showSocial
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onsubmit)} className="space-y-6">
           <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter your name"
+                      {...field}
+                      disabled={ispending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
@@ -91,7 +109,7 @@ export const Loginform = () => {
           <FormError message={error} />
           <FormSuccess message={success} />
           <Button disabled={ispending} type="submit" className="w-full">
-            Login
+            Create an account
           </Button>
         </form>
       </Form>
