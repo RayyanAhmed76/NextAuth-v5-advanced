@@ -1,4 +1,5 @@
 import React from "react";
+import { db } from "@/lib/db";
 
 function Authlayout({ children }: { children: React.ReactNode }) {
   return (
