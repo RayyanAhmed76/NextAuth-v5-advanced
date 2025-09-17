@@ -6,13 +6,34 @@ import * as z from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { getuserbyemail } from "@/data/user";
+import { signIn } from "@/auth";
+import { default_LOGIN_REDIRECT } from "@/routes";
+import { AuthError } from "next-auth";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
-  const validatedValues = loginScehma.safeParse(values);
-  if (!validatedValues.success) {
-    return { error: "Invalid credentials!" };
+  try {
+    const validatedValues = loginScehma.safeParse(values);
+    if (!validatedValues.success) {
+      return { error: "Invalid credentials!" };
+    }
+    const { email, password } = validatedValues.data;
+
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: default_LOGIN_REDIRECT,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid credentials!" };
+        default:
+          return { error: "something went wrong!" };
+      }
+    }
+    throw error;
   }
-  return { success: "Email sent!" };
 };
 
 export const register = async (values: z.infer<typeof RegisterScehma>) => {

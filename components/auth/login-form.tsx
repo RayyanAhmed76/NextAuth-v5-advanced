@@ -17,7 +17,7 @@ import { CardWrapper } from "./Card-wrapper";
 import { Button } from "../ui/button";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
-import { login } from "@/actions/login";
+import { login } from "@/actions/action";
 import { useState, useTransition } from "react";
 
 export const Loginform = () => {
