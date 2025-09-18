@@ -47,7 +47,7 @@ export const register = async (values: z.infer<typeof RegisterScehma>) => {
 
   const existinguser = await getuserbyemail(email);
 
-  if (!existinguser) {
+  if (existinguser) {
     return { error: "user already exists!" };
   }
 
