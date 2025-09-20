@@ -19,8 +19,14 @@ import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { login } from "@/actions/action";
 import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 
 export const Loginform = () => {
+  const searchparams = useSearchParams();
+  const errorurl =
+    searchparams.get("error") === "OAuthAccountNotLinked"
+      ? "Error! Already logged In with another provider."
+      : "";
   const [error, seterror] = useState<string | undefined>("");
   const [success, setsuccess] = useState<string | undefined>("");
   const [ispending, startTransition] = useTransition();
@@ -36,8 +42,8 @@ export const Loginform = () => {
     setsuccess("");
     startTransition(() => {
       login(values).then((data) => {
-        seterror(data.error);
-        setsuccess(data.success);
+        seterror(data?.error);
+        setsuccess(data?.success);
       });
     });
   };
@@ -88,7 +94,7 @@ export const Loginform = () => {
               )}
             />
           </div>
-          <FormError message={error} />
+          <FormError message={error || errorurl} />
           <FormSuccess message={success} />
           <Button disabled={ispending} type="submit" className="w-full">
             Login
