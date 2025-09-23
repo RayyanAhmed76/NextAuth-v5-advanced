@@ -9,6 +9,12 @@ import { getuserbyemail } from "@/data/user";
 import { signIn } from "@/auth";
 import { default_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
+import { generateverficationtoken } from "@/lib/tokens";
+import { sendverificationmail } from "@/lib/mail";
+import {
+  verificationtokenbyemail,
+  verificationtokenbytoken,
+} from "@/data/verification-token";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
   try {
@@ -17,6 +23,19 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
       return { error: "Invalid credentials!" };
     }
     const { email, password } = validatedValues.data;
+    const existinguser = await getuserbyemail(email);
+
+    if (!existinguser || !existinguser.email || !existinguser.password) {
+      return { error: "email does not exsits!" };
+    }
+
+    if (!existinguser.emailVerified) {
+      const verificationtoken = await generateverficationtoken(
+        existinguser.email
+      );
+
+      return { success: "Confirmation email sent!" };
+    }
 
     await signIn("credentials", {
       email,
@@ -59,5 +78,44 @@ export const register = async (values: z.infer<typeof RegisterScehma>) => {
     },
   });
 
-  return { success: "user created!" };
+  const verificationtoken = await generateverficationtoken(email);
+
+  await sendverificationmail(verificationtoken.email, verificationtoken.token);
+
+  return { success: "confirmaion email send!" };
+};
+
+export const newVerification = async (token: string) => {
+  const exisitingtoken = await verificationtokenbytoken(token);
+
+  if (!exisitingtoken) {
+    return { error: "Token does not exist!" };
+  }
+
+  const hasexpired = new Date(exisitingtoken.expires) < new Date();
+
+  if (hasexpired) {
+    return { error: "token has expired!" };
+  }
+
+  const existinguser = await verificationtokenbyemail(exisitingtoken.email);
+  if (!existinguser) {
+    return { error: "user does not exist!" };
+  }
+
+  await db.user.update({
+    where: {
+      id: existinguser.id,
+    },
+    data: {
+      emailVerified: new Date(),
+      email: exisitingtoken.email,
+    },
+  });
+
+  await db.verificationToken.delete({
+    where: { id: exisitingtoken.id },
+  });
+
+  return { success: "email verified" };
 };

@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import authConfig from "./auth.config";
 import { jwt } from "zod";
-import { getuserbyid } from "./data/user";
+import { getuserbyemail, getuserbyid } from "./data/user";
 import { UserRole } from "@prisma/client";
 
 export const {
@@ -30,6 +30,23 @@ export const {
     },
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "credentials") {
+        return true;
+      }
+
+      if (!user.id) {
+        return false;
+      }
+
+      const exisitinguser = await getuserbyid(user.id);
+
+      if (!exisitinguser?.emailVerified) {
+        return false;
+      }
+
+      return true;
+    },
     async session({ token, session }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
