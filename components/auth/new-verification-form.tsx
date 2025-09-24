@@ -22,10 +22,17 @@ export const NewverificatonForm = () => {
     }
     newVerification(token)
       .then((data) => {
-        (setsuccess(data.success), seterror(data.error));
+        if (data.success) {
+          setsuccess(data.success);
+        }
+        if (data.error) {
+          seterror(data.error);
+        }
       })
-      .catch(() => {
-        seterror("something went wrong!");
+      .catch((error) => {
+        seterror(
+          error instanceof Error ? error.message : "Something went wrong!"
+        );
       });
   }, [token]);
 

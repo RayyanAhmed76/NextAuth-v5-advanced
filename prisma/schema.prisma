@@ -48,6 +48,16 @@ model verificationToken {
   @@unique([email, token])
 }
 
+model passwordresetToken {
+  id      String   @id @unique @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+
 enum UserRole {
   ADMIN
   USER

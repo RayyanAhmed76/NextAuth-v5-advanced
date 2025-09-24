@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/auth";
+import { redirect } from "next/navigation";
 import React from "react";
 
 async function SettingPage() {
@@ -11,6 +12,7 @@ async function SettingPage() {
           "use server";
 
           await signOut();
+          redirect("/auth/login");
         }}
       >
         <button

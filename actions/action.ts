@@ -1,6 +1,11 @@
 "use server";
 
-import { loginScehma, RegisterScehma } from "@/schema";
+import {
+  loginScehma,
+  newpasswordschema,
+  passwordresetScehma,
+  RegisterScehma,
+} from "@/schema";
 import { error } from "console";
 import * as z from "zod";
 import bcrypt from "bcryptjs";
@@ -9,12 +14,16 @@ import { getuserbyemail } from "@/data/user";
 import { signIn } from "@/auth";
 import { default_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
-import { generateverficationtoken } from "@/lib/tokens";
-import { sendverificationmail } from "@/lib/mail";
+import {
+  generatePasswordResetToken,
+  generateverficationtoken,
+} from "@/lib/tokens";
+import { sendpasswordresetmail, sendverificationmail } from "@/lib/mail";
 import {
   verificationtokenbyemail,
   verificationtokenbytoken,
 } from "@/data/verification-token";
+import { passwordVerificationTokenbyToken } from "@/data/password-reset-token";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
   try {
@@ -34,7 +43,7 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
         existinguser.email
       );
 
-      return { success: "Confirmation email sent!" };
+      return { success: "confirm email to login!" };
     }
 
     await signIn("credentials", {
@@ -105,7 +114,8 @@ export const newVerification = async (token: string) => {
 
   await db.user.update({
     where: {
-      id: existinguser.id,
+      //id: existinguser.id,
+      email: existinguser.email,
     },
     data: {
       emailVerified: new Date(),
@@ -118,4 +128,84 @@ export const newVerification = async (token: string) => {
   });
 
   return { success: "email verified" };
+};
+
+export const passwordresetverification = async (
+  values: z.infer<typeof passwordresetScehma>
+) => {
+  const validatedvalues = passwordresetScehma.safeParse(values);
+
+  if (!validatedvalues.success) {
+    return { error: "Invalid email!" };
+  }
+
+  const { email } = validatedvalues.data;
+
+  const existinguser = await getuserbyemail(email);
+
+  if (!existinguser) {
+    return { error: "email not found!" };
+  }
+
+  const verificationtoken = await generatePasswordResetToken(email);
+
+  await sendpasswordresetmail(verificationtoken.email, verificationtoken.token);
+
+  return {
+    success: "Password reset mail send!",
+  };
+};
+
+export const newpassword = async (
+  values: z.infer<typeof newpasswordschema>,
+  token: string | null
+) => {
+  if (!token) {
+    return { error: "token does not exist" };
+  }
+  const validatedvalues = newpasswordschema.safeParse(values);
+  if (!validatedvalues.success) {
+    return { error: "invalid password!" };
+  }
+
+  const { password } = validatedvalues.data;
+
+  const existingtoken = await passwordVerificationTokenbyToken(token);
+
+  if (!existingtoken) {
+    return { error: "token does not exist" };
+  }
+
+  const hasexpired = new Date(existingtoken.expires) < new Date();
+
+  if (!hasexpired) {
+    return { error: "token has been expired!" };
+  }
+
+  const existinguser = await getuserbyemail(existingtoken.email);
+
+  if (!existinguser) {
+    return { error: "user does not exist" };
+  }
+
+  const hashedpassword = await bcrypt.hash(password, 10);
+
+  await db.user.update({
+    where: {
+      email: existingtoken.email,
+    },
+    data: {
+      password: hashedpassword,
+    },
+  });
+
+  await db.passwordresetToken.delete({
+    where: {
+      token: existingtoken.token,
+    },
+  });
+
+  return {
+    success: "Password updated!",
+  };
 };
