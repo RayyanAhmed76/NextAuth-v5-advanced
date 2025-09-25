@@ -19,6 +19,7 @@ export const loginScehma = z.object({
     .max(100, { message: "password should be less than 100 character" })
     .trim()
     .min(5, { message: "Minimum length for password is 5" }),
+  code: z.optional(z.string()),
 });
 
 export const RegisterScehma = z.object({

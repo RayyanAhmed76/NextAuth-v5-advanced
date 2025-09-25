@@ -28,6 +28,7 @@ export const Loginform = () => {
     searchparams.get("error") === "OAuthAccountNotLinked"
       ? "Error! Already logged In with another provider."
       : "";
+  const [showtwofactor, settwofactor] = useState(false);
   const [error, seterror] = useState<string | undefined>("");
   const [success, setsuccess] = useState<string | undefined>("");
   const [ispending, startTransition] = useTransition();
@@ -43,8 +44,17 @@ export const Loginform = () => {
     setsuccess("");
     startTransition(() => {
       login(values).then((data) => {
-        seterror(data?.error);
-        setsuccess(data?.success);
+        if (data?.error) {
+          form.reset();
+          seterror(data.error);
+        }
+        if (data?.success) {
+          form.reset();
+          setsuccess(data.success);
+        }
+        if (data?.twofactor) {
+          settwofactor(true);
+        }
       });
     });
   };
@@ -58,54 +68,77 @@ export const Loginform = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onsubmit)} className="space-y-6">
           <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your mail "
-                      {...field}
-                      disabled={ispending}
-                      type="email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>password</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={ispending}
-                      placeholder="***** "
-                      {...field}
-                      type="password"
-                    />
-                  </FormControl>
-                  <Button
-                    size={"sm"}
-                    variant={"link"}
-                    className="cursor-pointer px-0"
-                  >
-                    <Link href={"/auth/reset"}>forgot your password?</Link>
-                  </Button>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {showtwofactor && (
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>code</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your code "
+                        {...field}
+                        disabled={ispending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {!showtwofactor && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your mail "
+                          {...field}
+                          disabled={ispending}
+                          type="email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>password</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={ispending}
+                          placeholder="***** "
+                          {...field}
+                          type="password"
+                        />
+                      </FormControl>
+                      <Button
+                        size={"sm"}
+                        variant={"link"}
+                        className="cursor-pointer px-0"
+                      >
+                        <Link href={"/auth/reset"}>forgot your password?</Link>
+                      </Button>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
           </div>
           <FormError message={error || errorurl} />
           <FormSuccess message={success} />
           <Button disabled={ispending} type="submit" className="w-full">
-            Login
+            {showtwofactor ? "Confirm code" : "login"}
           </Button>
         </form>
       </Form>

@@ -6,6 +6,7 @@ import authConfig from "./auth.config";
 import { jwt } from "zod";
 import { getuserbyemail, getuserbyid } from "./data/user";
 import { UserRole } from "@prisma/client";
+import { getTwoFactorConfirmation } from "./data/two-factor-confirmation";
 
 export const {
   handlers: { GET, POST },
@@ -43,6 +44,22 @@ export const {
 
       if (!exisitinguser?.emailVerified) {
         return false;
+      }
+
+      if (exisitinguser.isTwoFactorenabled) {
+        const twofactorconfirmation = await getTwoFactorConfirmation(
+          exisitinguser.id
+        );
+
+        if (!twofactorconfirmation) {
+          return false;
+        }
+
+        await db.twoFactorConfirmation.delete({
+          where: {
+            id: twofactorconfirmation.id,
+          },
+        });
       }
 
       return true;

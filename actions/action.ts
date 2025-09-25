@@ -16,14 +16,23 @@ import { default_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
 import {
   generatePasswordResetToken,
+  generateTwoFactorToken,
   generateverficationtoken,
 } from "@/lib/tokens";
-import { sendpasswordresetmail, sendverificationmail } from "@/lib/mail";
+import {
+  sendpasswordresetmail,
+  sendtwofactoremail,
+  sendverificationmail,
+} from "@/lib/mail";
 import {
   verificationtokenbyemail,
   verificationtokenbytoken,
 } from "@/data/verification-token";
 import { passwordVerificationTokenbyToken } from "@/data/password-reset-token";
+import {
+  getTwoFactorTokenbyemail,
+  getTwoFactorTokenbyToken,
+} from "@/data/two-factor-token";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
   try {
@@ -31,7 +40,7 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
     if (!validatedValues.success) {
       return { error: "Invalid credentials!" };
     }
-    const { email, password } = validatedValues.data;
+    const { email, password, code } = validatedValues.data;
     const existinguser = await getuserbyemail(email);
 
     if (!existinguser || !existinguser.email || !existinguser.password) {
@@ -44,6 +53,31 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
       );
 
       return { success: "confirm email to login!" };
+    }
+
+    if (existinguser.isTwoFactorenabled && existinguser.email) {
+      if (code) {
+        const twofactortoken = await getTwoFactorTokenbyemail(
+          existinguser.email
+        );
+
+        if (!twofactortoken) {
+          return { error: "No code entered!" };
+        }
+        if (twofactortoken.token !== code) {
+          return { error: "Invalid code!" };
+        }
+        const hasexpired = new Date(twofactortoken.expires) < new Date();
+
+        if (!hasexpired) {
+          return { error: "code expired!" };
+        }
+      } else {
+        const twofactor = await generateTwoFactorToken(existinguser.email);
+        await sendtwofactoremail(twofactor.email, twofactor.token);
+
+        return { twofactor: true };
+      }
     }
 
     await signIn("credentials", {
