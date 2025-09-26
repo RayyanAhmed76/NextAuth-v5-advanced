@@ -1,18 +1,16 @@
-import { logout } from "@/actions/action";
-import { signOut } from "next-auth/react";
+"use client";
 
-interface logoutbuttonprops {
+import { logout } from "@/actions/action";
+import { Slot } from "@radix-ui/react-slot";
+
+interface LogoutButtonProps {
   children?: React.ReactNode;
 }
 
-export const Logout = ({ children }: logoutbuttonprops) => {
-  const onclick = () => {
-    signOut();
+export const Logout = ({ children }: LogoutButtonProps) => {
+  const onClick = () => {
+    logout();
   };
 
-  return (
-    <span className="cursor-pointer" onClick={onclick}>
-      {children}
-    </span>
-  );
+  return <Slot onClick={onClick}>{children}</Slot>;
 };

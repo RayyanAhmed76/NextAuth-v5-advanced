@@ -10,7 +10,7 @@ function SettingPage() {
     logout();
   };
   return (
-    <div className="bg-white p-10 rounded-xl">
+    <div className="bg-white p-10">
       <button
         onClick={onclick}
         className="px-3 py-4 bg-red-400 rounded-xl cursor-pointer flex- flex-col "
