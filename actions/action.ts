@@ -11,7 +11,7 @@ import * as z from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { getuserbyemail } from "@/data/user";
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
 import { default_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
 import {
@@ -33,6 +33,8 @@ import {
   getTwoFactorTokenbyemail,
   getTwoFactorTokenbyToken,
 } from "@/data/two-factor-token";
+import { getTwoFactorConfirmation } from "@/data/two-factor-confirmation";
+import { signOut } from "next-auth/react";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
   try {
@@ -69,9 +71,33 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
         }
         const hasexpired = new Date(twofactortoken.expires) < new Date();
 
-        if (!hasexpired) {
+        if (hasexpired) {
           return { error: "code expired!" };
         }
+
+        await db.twoFactorToken.delete({
+          where: {
+            id: twofactortoken.id,
+          },
+        });
+
+        const exisitingConfirmation = await getTwoFactorConfirmation(
+          existinguser.id
+        );
+
+        if (exisitingConfirmation) {
+          await db.twoFactorConfirmation.delete({
+            where: {
+              id: exisitingConfirmation.id,
+            },
+          });
+        }
+
+        await db.twoFactorConfirmation.create({
+          data: {
+            userId: existinguser.id,
+          },
+        });
       } else {
         const twofactor = await generateTwoFactorToken(existinguser.email);
         await sendtwofactoremail(twofactor.email, twofactor.token);
@@ -96,6 +122,10 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
     }
     throw error;
   }
+};
+
+export const logout = async () => {
+  await signOut();
 };
 
 export const register = async (values: z.infer<typeof RegisterScehma>) => {

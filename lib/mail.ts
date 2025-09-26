@@ -7,7 +7,7 @@ export const sendtwofactoremail = async (email: string, token: string) => {
     from: "onboarding@resend.dev",
     to: email,
     subject: "Two Factor Verification",
-    html: `<p>Your Two verification Code: ${token} </p>`,
+    html: `<p>Your Two Factor verification Code: ${token} </p>`,
   });
 };
 

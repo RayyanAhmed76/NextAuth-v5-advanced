@@ -1,27 +1,23 @@
-import { auth, signOut } from "@/auth";
-import { redirect } from "next/navigation";
+"use client";
+import { logout } from "@/actions/action";
+import { UseCurrentUser } from "@/hooks/use-current-user";
+import { useSession, signOut } from "next-auth/react";
 import React from "react";
 
-async function SettingPage() {
-  const session = await auth();
+function SettingPage() {
+  const user = UseCurrentUser();
+  const onclick = () => {
+    logout();
+  };
   return (
-    <div>
-      {JSON.stringify(session)}
-      <form
-        action={async () => {
-          "use server";
-
-          await signOut();
-          redirect("/auth/login");
-        }}
+    <div className="bg-white p-10 rounded-xl">
+      <button
+        onClick={onclick}
+        className="px-3 py-4 bg-red-400 rounded-xl cursor-pointer flex- flex-col "
+        type="submit"
       >
-        <button
-          className="px-3 py-4 bg-red-400 rounded-xl cursor-pointer "
-          type="submit"
-        >
-          signout
-        </button>
-      </form>
+        signout
+      </button>
     </div>
   );
 }
