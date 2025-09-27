@@ -302,6 +302,39 @@ export const settings = async (values: z.infer<typeof settingScehma>) => {
     return { error: "Unauthorized!" };
   }
 
+  if (user.isOAuth) {
+    values.email = undefined;
+    values.password = undefined;
+    values.newpassword = undefined;
+    values.isTwoFactorenabled = undefined;
+  }
+
+  if (values.email && values.email !== user.email) {
+    const existinguser = await getuserbyemail(values.email);
+    if (existinguser && existinguser.id !== user.id) {
+      return { error: "Email already is use!" };
+    }
+  }
+
+  const verificationtoken = await generateverficationtoken(values.email!);
+
+  await sendverificationmail(verificationtoken.email, verificationtoken.token);
+
+  if (values.password && values.newpassword && dbuser.password) {
+    const passwordMatch = await bcrypt.compare(
+      values.password,
+      dbuser.password
+    );
+
+    if (!passwordMatch) {
+      return { error: "Incorrect password!" };
+    }
+
+    const hashedpassword = await bcrypt.hash(values.password, 10);
+    values.password = hashedpassword;
+    values.newpassword = undefined;
+  }
+
   await db.user.update({
     where: {
       id: dbuser.id,
@@ -311,5 +344,5 @@ export const settings = async (values: z.infer<typeof settingScehma>) => {
     },
   });
 
-  return { success: "User updated!" };
+  return { success: "Verification mail sent!" };
 };

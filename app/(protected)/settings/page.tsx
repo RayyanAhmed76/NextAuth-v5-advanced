@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { UseCurrentUser } from "@/hooks/use-current-user";
 import { settingScehma } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +47,7 @@ function SettingPage() {
       role: user?.role || undefined,
       password: undefined,
       newpassword: undefined,
+      isTwoFactorenabled: user?.isTwoFactorenabled || undefined,
     },
   });
   const onsubmit = (values: z.infer<typeof settingScehma>) => {
@@ -88,59 +91,63 @@ function SettingPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Update your mail here"
-                        disabled={ispending}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="password"
-                        disabled={ispending}
-                        type="password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="newpassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New-Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="new-password"
-                        disabled={ispending}
-                        type="password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {user?.isOAuth === false && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Update your mail here"
+                            disabled={ispending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="password"
+                            disabled={ispending}
+                            type="password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="newpassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New-Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="new-password"
+                            disabled={ispending}
+                            type="password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
               <FormField
                 control={form.control}
                 name="role"
@@ -166,6 +173,30 @@ function SettingPage() {
                   </FormItem>
                 )}
               />
+
+              {user?.isOAuth === false && (
+                <FormField
+                  control={form.control}
+                  name="isTwoFactorenabled"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between iems-center rounded-lg border p-3 shadow-md">
+                      <div className="space-y-0.5">
+                        <FormLabel>Two Factor Authentication</FormLabel>
+                        <FormDescription>
+                          Enable Two Factor Authentication For Your Account
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          disabled={ispending}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
             <FormError message={error} />
             <FormSuccess message={success} />
