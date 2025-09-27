@@ -1,24 +1,181 @@
 "use client";
-import { logout } from "@/actions/action";
+import { logout, settings } from "@/actions/action";
+import { FormError } from "@/components/form-error";
+import { FormSuccess } from "@/components/form-success";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UseCurrentUser } from "@/hooks/use-current-user";
+import { settingScehma } from "@/schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserRole } from "@prisma/client";
+
 import { useSession, signOut } from "next-auth/react";
-import React from "react";
+import React, { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
 
 function SettingPage() {
   const user = UseCurrentUser();
-  const onclick = () => {
-    logout();
+  const [error, seterror] = useState<string | null>();
+  const [success, setsuccess] = useState<string | null>();
+  const { update } = useSession();
+  const [ispending, startTransition] = useTransition();
+
+  const form = useForm<z.infer<typeof settingScehma>>({
+    resolver: zodResolver(settingScehma),
+    defaultValues: {
+      name: user?.name || undefined,
+      email: user?.email || undefined,
+      role: user?.role || undefined,
+      password: undefined,
+      newpassword: undefined,
+    },
+  });
+  const onsubmit = (values: z.infer<typeof settingScehma>) => {
+    startTransition(() => {
+      settings({
+        ...values,
+      }).then((data) => {
+        if (data.error) {
+          seterror(data.error);
+        }
+        if (data.success) {
+          update();
+          setsuccess(data.success);
+        }
+      });
+    });
   };
   return (
-    <div className="bg-white p-10">
-      <button
-        onClick={onclick}
-        className="px-3 py-4 bg-red-400 rounded-xl cursor-pointer flex- flex-col "
-        type="submit"
-      >
-        signout
-      </button>
-    </div>
+    <Card className="w-[600px]">
+      <CardHeader>
+        <p className="text-2xl font-semibold text-center">Settings</p>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form className="space-y-6" onSubmit={form.handleSubmit(onsubmit)}>
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Update your name here"
+                        disabled={ispending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Update your mail here"
+                        disabled={ispending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="password"
+                        disabled={ispending}
+                        type="password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="newpassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New-Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="new-password"
+                        disabled={ispending}
+                        type="password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      disabled={ispending}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={UserRole.ADMIN}>ADMIN</SelectItem>
+                        <SelectItem value={UserRole.USER}>USER</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormError message={error} />
+            <FormSuccess message={success} />
+            <Button disabled={ispending} type="submit">
+              save
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
 

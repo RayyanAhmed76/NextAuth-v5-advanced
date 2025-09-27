@@ -5,12 +5,13 @@ import {
   newpasswordschema,
   passwordresetScehma,
   RegisterScehma,
+  settingScehma,
 } from "@/schema";
 import { error } from "console";
 import * as z from "zod";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { getuserbyemail } from "@/data/user";
+import { getuserbyemail, getuserbyid } from "@/data/user";
 import { auth, signIn } from "@/auth";
 import { default_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
@@ -35,6 +36,8 @@ import {
 } from "@/data/two-factor-token";
 import { getTwoFactorConfirmation } from "@/data/two-factor-confirmation";
 import { signOut } from "next-auth/react";
+import { CurrentUser, CurrentUserRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export const login = async (values: z.infer<typeof loginScehma>) => {
   try {
@@ -272,4 +275,41 @@ export const newpassword = async (
   return {
     success: "Password updated!",
   };
+};
+
+export const admin = async () => {
+  const role = await CurrentUserRole();
+
+  if (role !== UserRole.ADMIN) {
+    return { error: "User not allowed" };
+  } else {
+    return { sucess: "user allowed!" };
+  }
+};
+
+export const settings = async (values: z.infer<typeof settingScehma>) => {
+  const user = await CurrentUser();
+
+  if (!user) {
+    return {
+      error: "Unauthorized!",
+    };
+  }
+
+  const dbuser = await getuserbyid(user.id!);
+
+  if (!dbuser) {
+    return { error: "Unauthorized!" };
+  }
+
+  await db.user.update({
+    where: {
+      id: dbuser.id,
+    },
+    data: {
+      ...values,
+    },
+  });
+
+  return { success: "User updated!" };
 };
