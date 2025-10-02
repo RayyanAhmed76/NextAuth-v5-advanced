@@ -21,10 +21,12 @@ export default function Home() {
         >
           Auth
         </h1>
-        <p className="text-white text-lg">A simpe authentication service</p>
+        <p className="text-white text-lg mb-5">
+          A simpe authentication service
+        </p>
       </div>
       <div>
-        <LoginButton>
+        <LoginButton mode="modal" asChild>
           <Button className="cursor-pointer" variant={"secondary"} size={"lg"}>
             Sign In
           </Button>

@@ -24,6 +24,7 @@ import Link from "next/link";
 
 export const Loginform = () => {
   const searchparams = useSearchParams();
+  const callbackUrl = searchparams.get("callbackUrl");
   const errorurl =
     searchparams.get("error") === "OAuthAccountNotLinked"
       ? "Error! Already logged In with another provider."
@@ -43,7 +44,7 @@ export const Loginform = () => {
     seterror("");
     setsuccess("");
     startTransition(() => {
-      login(values).then((data) => {
+      login(values, callbackUrl).then((data) => {
         if (data?.error) {
           form.reset();
           seterror(data.error);

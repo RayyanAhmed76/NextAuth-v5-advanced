@@ -5,11 +5,14 @@ import { FaGithub } from "react-icons/fa";
 import { Button } from "../ui/button";
 import { signIn } from "next-auth/react";
 import { default_LOGIN_REDIRECT } from "@/routes";
+import { useSearchParams } from "next/navigation";
 
 export const Socials = () => {
+  const searcparams = useSearchParams();
+  const callbackUrl = searcparams.get("callbackUrl");
   const onClick = async (providers: "google" | "github") => {
     await signIn(providers, {
-      callbackUrl: default_LOGIN_REDIRECT,
+      callbackUrl: callbackUrl || default_LOGIN_REDIRECT,
     });
   };
   return (

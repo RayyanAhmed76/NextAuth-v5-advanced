@@ -39,7 +39,10 @@ import { signOut } from "next-auth/react";
 import { CurrentUser, CurrentUserRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
-export const login = async (values: z.infer<typeof loginScehma>) => {
+export const login = async (
+  values: z.infer<typeof loginScehma>,
+  callbackUrl?: string | null
+) => {
   try {
     const validatedValues = loginScehma.safeParse(values);
     if (!validatedValues.success) {
@@ -112,7 +115,7 @@ export const login = async (values: z.infer<typeof loginScehma>) => {
     await signIn("credentials", {
       email,
       password,
-      redirectTo: default_LOGIN_REDIRECT,
+      redirectTo: callbackUrl || default_LOGIN_REDIRECT,
     });
   } catch (error) {
     if (error instanceof AuthError) {
